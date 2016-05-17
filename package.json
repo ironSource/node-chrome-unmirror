@@ -1,6 +1,6 @@
 {
   "name": "chrome-unmirror",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Transform mirror objects from a remote Chrome debugger into local values",
   "license": "MIT",
   "author": "Vincent Weevers",

@@ -10,6 +10,8 @@ const ERROR_CONSTRUCTORS
     , 'TypeError': TypeError
     , 'URIError': URIError }
 
+const classes = {}
+
 function unmirror(remoteObj) {
   const { type, subtype, className, value, preview, description } = remoteObj
   const props = (preview && preview.properties) || []
@@ -94,15 +96,13 @@ function unmirror(remoteObj) {
     return err
   }
 
-  // Mirror objects for Maps and Sets do not include elements it seems
+  // Mirror objects for Maps and Sets do not include elements,
+  // you'll need to fetch them through the Runtime domain.
   if (subtype === 'map') return typeof Map !== 'undefined' ? new Map : undefined
   if (subtype === 'set') return typeof Set !== 'undefined' ? new Set : undefined
   if (subtype === 'array') return props.map(unmirror)
 
-  // In case remote value is some other non-JSON type that I missed.
-  if (className !== 'Object') return maybeJSON(value, description)
-
-  const o = {}
+  const o = typeof value === 'object' ? value : makeInstance(className)
   props.forEach(prop => o[prop.name] = unmirror(prop))
   return o
 }
@@ -115,6 +115,17 @@ function maybeJSON(value, notSetValue) {
   } catch(_) {
     return value
   }
+}
+
+function makeInstance(className) {
+  if (!className || className === 'Object') return {}
+
+  if (!classes[className]) {
+    const namedFunction = new Function(`return function ${className}() {}`)
+    classes[className] = namedFunction()
+  }
+
+  return new (classes[className])()
 }
 
 module.exports = unmirror
